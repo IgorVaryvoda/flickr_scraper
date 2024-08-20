@@ -20,7 +20,7 @@
 *.data
 *.json
 images*/
-
+review*/
 *.cfg
 !cfg/yolov3*.cfg
 
