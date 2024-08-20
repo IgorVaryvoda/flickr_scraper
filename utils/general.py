@@ -1,31 +1,22 @@
-# General utilities for use in image-handling operations
-# Written by Glenn Jocher (glenn.jocher@ultralytics.com) for https://github.com/ultralytics
-
 import os
 from pathlib import Path
-
 import requests
-from PIL import Image
 
+def download_uri(uri, dir_path):
+    # Ensure dir_path is a Path object
+    dir_path = Path(dir_path)
 
-def download_uri(uri, dir="./"):
-    """Downloads file from URI, performing checks and renaming; supports timeout and image format suffix addition."""
+    # Create filename from the URI
+    filename = os.path.basename(uri.split("?")[0])
 
-    # Download
-    f = dir + os.path.basename(uri)  # filename
-    with open(f, "wb") as file:
-        file.write(requests.get(uri, timeout=10).content)
+    # Combine dir_path and filename correctly
+    save_path = dir_path / filename
 
-    # Rename (remove wildcard characters)
-    src = f  # original name
-    for c in ["%20", "%", "*", "~", "(", ")"]:
-        f = f.replace(c, "_")
-    f = f[: f.index("?")] if "?" in f else f  # new name
-    if src != f:
-        os.rename(src, f)  # rename
+    # Download the file
+    with requests.get(uri, stream=True) as r:
+        r.raise_for_status()
+        with open(save_path, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=8192):
+                f.write(chunk)
 
-    # Add suffix (if missing)
-    if Path(f).suffix == "":
-        src = f  # original name
-        f += f".{Image.open(f).format.lower()}"
-        os.rename(src, f)  # rename
+    print(f"Downloaded {filename} to {save_path}")
